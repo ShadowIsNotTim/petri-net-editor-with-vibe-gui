@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+	<link rel="manifest" href="./manifest.json">
+    <title>Минимальный Редактор Сетей Петри</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: sans-serif;
+        }
+
+        body {
+            display: flex;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: #f5f5f5;
+            font-size: 15px;
+        }
+
+        /* ПАНЕЛИ: Добавлена умная прокрутка, если контент не влезает */
+        #left-menu,
+        #right-menu {
+            width: 260px;
+            max-height: 100vh;
+            background: #ffffff;
+            padding: 15px;
+            border-right: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+            overflow-y: auto;
+            /* Появляется скролл только при необходимости */
+        }
+
+        #right-menu {
+            border-right: none;
+            border-left: 1px solid #ccc;
+        }
+
+        /* Кнопки и инпуты */
+        button {
+            padding: 11px;
+            cursor: pointer;
+            border: 1px solid #aaa;
+            background: #eee;
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: left;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        button:hover {
+            background: #ddd;
+        }
+
+        button.active {
+            background: #007fff;
+            color: white;
+            border-color: #0056b3;
+        }
+
+        input,
+        select {
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .property-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .btn-danger {
+            background: #ffdddd;
+            color: red;
+            border-color: #ffcccc;
+        }
+
+        .btn-danger:hover {
+            background: #ffcccc;
+        }
+
+        /* Индикатор симуляции */
+        #sim-status {
+            padding: 10px;
+            border-radius: 4px;
+            background: #fff3cd;
+            color: #856404;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+            flex-shrink: 0;
+        }
+
+        /* Рабочая область */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            background: #fafafa;
+        }
+
+        svg {
+            width: 2000px;
+            height: 2000px;
+            background: white;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            cursor: crosshair;
+        }
+
+        /* Стили SVG элементов */
+        .place {
+            fill: #fff;
+            stroke: #333;
+            stroke-width: 2;
+            cursor: move;
+        }
+
+        .transition {
+            fill: #fff;
+            stroke: #333;
+            stroke-width: 2;
+            cursor: pointer;
+        }
+
+        .transition.enabled {
+            fill: #0ed500;
+            stroke: #00de34;
+            stroke-width: 2.5;
+        }
+
+        .arc {
+            fill: none;
+            stroke: #555;
+            stroke-width: 2;
+            marker-end: url(#arrow);
+            cursor: pointer;
+        }
+
+        .arc-hover {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 10;
+            cursor: pointer;
+        }
+
+        .token {
+            fill: #333;
+            pointer-events: none;
+        }
+
+        .label {
+            font-size: 14px;
+            pointer-events: none;
+            text-anchor: middle;
+            font-weight: bold;
+            fill: #111;
+        }
+
+        .arc-weight {
+            font-size: 13px;
+            fill: blue;
+            pointer-events: none;
+            font-weight: bold;
+        }
+
+        .comment-text {
+            font-size: 15px;
+            fill: #555;
+            font-style: italic;
+            pointer-events: none;
+            text-anchor: middle;
+        }
+
+        .comment-box {
+            fill: transparent;
+            stroke: transparent;
+            cursor: move;
+        }
+
+        .selected {
+            stroke: #007fff !important;
+            stroke-width: 3;
+        }
+
+        .comment-g.selected .comment-box {
+            stroke: #007fff;
+            stroke-dasharray: 4;
+            stroke-width: 1.5;
+        }
+
+        .source-selected {
+            stroke: #ff9900 !important;
+            stroke-width: 3px !important;
+            stroke-dasharray: 4;
+        }
+
+        body.mode-simulation svg {
+            cursor: default;
+        }
+
+        body.mode-simulation .place {
+            cursor: default;
+        }
+
+        .color-dimmed {
+            opacity: 0.15 !important;
+            pointer-events: none;
+        }
+
+        .color-filter-box {
+            display: flex;
+            gap: 12px;
+            background: #fdfdfd;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .color-filter-box label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 18px;
+            user-select: none;
+        }
+
+        .color-filter-box input {
+            width: auto;
+            margin: 0 3px 0 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- СЛЕВА: Меню управления -->
+    <div id="left-menu">
+        <h3>Инструменты</h3>
+        <button id="btn-select" class="active" onclick="setMode('select')">🖐️ Выделение / Движение</button>
+        <button id="btn-simulation" onclick="setMode('simulation')">▶️ Режим Симуляции</button>
+        <button id="btn-reset-sim" onclick="resetSimulation()"
+            style="display:none; background: #f8d7da; color: #721c24;">🔄 Сбросить к начальной</button>
+
+        <button id="btn-place" onclick="setMode('place')">⚪ Позиция (P)</button>
+        <button id="btn-transition" onclick="setMode('transition')">⬛ Переход (T)</button>
+        <button id="btn-arc" onclick="setMode('arc')">➡️ Дуга (→)</button>
+        <button id="btn-token" onclick="setMode('token')">⚫ Фишка (+1)</button>
+        <button id="btn-comment" onclick="setMode('comment')">📝 Комментарий (Текст)</button>
+
+        <div class="section-title">Фильтр цветов</div>
+        <div class="color-filter-box">
+            <label><input type="checkbox" id="chk-filter-black" checked onchange="toggleFilterColor('black')">⚫</label>
+            <label><input type="checkbox" id="chk-filter-red" checked onchange="toggleFilterColor('red')">🔴</label>
+            <label><input type="checkbox" id="chk-filter-blue" checked onchange="toggleFilterColor('blue')">🔵</label>
+            <label><input type="checkbox" id="chk-filter-green" checked onchange="toggleFilterColor('green')">🟢</label>
+        </div>
+
+        <div class="section-title">Браузер (LocalStorage)</div>
+        <button onclick="saveToLocalStorage()">📥 Сохранить в браузер</button>
+        <button onclick="loadFromLocalStorage()">📤 Загрузить из браузера</button>
+
+        <div class="section-title">Файлы</div>
+        <button onclick="exportToFile()" style="background: #eef7ff; border-color: #bce0ff;">💾 Экспорт в JSON</button>
+        <button onclick="document.getElementById('import-file-input').click()"
+            style="background: #f6fff5; border-color: #cfffcc;">📂 Импорт из JSON</button>
+        <input type="file" id="import-file-input" accept=".json" onchange="importFromFile(event)"
+            style="display: none;">
+
+    </div>
+
+    <!-- ПОЦЕНТРУ: Графический холст -->
+    <div id="canvas-container">
+        <svg id="petri-svg" onmousedown="onCanvasMouseDown(event)">
+            <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6"
+                    orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#555" />
+                </marker>
+            </defs>
+            <g id="arcs-group"></g>
+            <g id="nodes-group"></g>
+        </svg>
+    </div>
+
+    <!-- СПРАВА: Свойства выбранного объекта -->
+    <div id="right-menu">
+        <h3>Свойства</h3>
+        <div id="properties-panel">
+            <p style="color:#888;">Выберите объект для редактирования</p>
+        </div>
+    </div>
+
+    <script src="editor.js"></script>
+	<script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker успешно зарегистрирован!', reg.scope))
+                    .catch(err => console.log('Ошибка регистрации Service Worker:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>

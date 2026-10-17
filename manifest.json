@@ -1,0 +1,18 @@
+{
+  "short_name": "ПетриРедактор",
+  "name": "Редактор Сетей Петри",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%23007fff'/><circle cx='50' cy='50' r='10' fill='white'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#f5f5f5",
+  "theme_color": "#007fff",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}
+
