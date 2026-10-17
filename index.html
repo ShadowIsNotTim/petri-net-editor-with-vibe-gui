@@ -21,6 +21,29 @@
             font-size: 15px;
         }
 
+        /* Стили для фонового оверлея при перетаскивании */
+        body.drag-active::after {
+            content: "Перетащите JSON-файл сети Петри сюда";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-family: sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px dashed #3b82f6;
+            box-sizing: border-box;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+
         /* ПАНЕЛИ: Добавлена умная прокрутка, если контент не влезает */
         #left-menu,
         #right-menu {
@@ -297,7 +320,8 @@
         </div>
 
         <div class="section-title">Управление холстом</div>
-        <button onclick="clearPetriNet()" class="btn-danger" style="background: #fff0f0; color: #d93838; border-color: #f5c2c2;">🧹 Очистить всё</button>
+        <button onclick="clearPetriNet()" class="btn-danger"
+            style="background: #fff0f0; color: #d93838; border-color: #f5c2c2;">🧹 Очистить всё</button>
 
         <div class="section-title">Файлы</div>
         <button onclick="exportToFile()" style="background: #eef7ff; border-color: #bce0ff;">💾 Экспорт в JSON</button>

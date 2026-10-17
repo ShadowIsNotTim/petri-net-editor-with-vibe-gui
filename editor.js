@@ -566,7 +566,11 @@ function exportToFile() {
 }
 
 function importFromFile(event) {
-    const file = event.target.files;
+    if (event) {
+        event.preventDefault();
+    }
+    const files = event.dataTransfer ? event.dataTransfer.files : event.target.files;
+    const file = files[0];
     if (!file) return;
 
     const reader = new FileReader();
@@ -588,6 +592,36 @@ function importFromFile(event) {
     reader.readAsText(file);
     event.target.value = '';
 }
+
+// --- ИМПОРТ DRAG-and-DROP ---
+let dragCounter = 0;
+document.body.addEventListener('dragenter', (event) => {
+    event.preventDefault();
+    dragCounter++;
+    if (dragCounter === 1) {
+        document.body.classList.add('drag-active');
+    }
+});
+
+document.body.addEventListener('dragover', (event) => {
+    event.preventDefault();
+});
+
+document.body.addEventListener('dragleave', (event) => {
+    event.preventDefault();
+    dragCounter--;
+    if (dragCounter === 0) {
+        document.body.classList.remove('drag-active');
+    }
+});
+
+document.body.addEventListener('drop', (event) => {
+    dragCounter = 0;
+    document.body.classList.remove('drag-active');
+    importFromFile(event);
+});
+
+
 
 // Инициализация холста
 loadFromLocalStorage();
