@@ -147,13 +147,15 @@ function onNodeMouseDown(e, id) {
         return;
     }
 
-    if (currentMode === 'select') {
+    if (currentMode === 'select' ||
+        (currentMode === 'place' || currentMode === 'transition' ||
+         currentMode === 'comment')) {  // Для перетаскивания при создании элементов
         const node = findNode(id) || findComment(id);
         dragTarget = {id: id, node: node};
         selectObject(id);
 
-        window.addEventListener('mousemove', onNodeMouseMove);
-        window.addEventListener('mouseup', onNodeMouseUp);
+        window.addEventListener('pointermove', onNodeMouseMove);
+        window.addEventListener('pointerup', onNodeMouseUp);
     } else if (currentMode === 'arc') {
         if (findComment(id)) return;
         if (!arcSourceId) {
@@ -193,18 +195,33 @@ function onNodeMouseDown(e, id) {
 }
 
 function onNodeMouseMove(e) {
-    if (!dragTarget) return;
+    if (!dragTarget || !dragTarget.node) return;
     const rect = svg.getBoundingClientRect();
-    dragTarget.node.x = e.clientX - rect.left;
-    dragTarget.node.y = e.clientY - rect.top;
+    dragTarget.node.x = e.offsetX;
+    dragTarget.node.y = e.offsetY;
     render();
 }
 
 function onNodeMouseUp() {
     dragTarget = null;
-    window.removeEventListener('mousemove', onNodeMouseMove);
-    window.removeEventListener('mouseup', onNodeMouseUp);
+    window.removeEventListener('pointermove', onNodeMouseMove);
+    window.removeEventListener('pointerup', onNodeMouseUp);
 }
+
+window.addEventListener('keydown', function(e) {
+    if (!selectedId) return;
+
+    // Если фокус сейчас находится в текстовом инпуте или поле ввода — не удаляем объект
+    const targetTag = e.target.tagName.toUpperCase();
+    if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+    }
+
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        deleteObject(selectedId);
+    }
+})
 
 function toggleFilterColor(color) {
     if (visibleColors[color] !== undefined) {
@@ -265,7 +282,7 @@ function render() {
 
         const pathMarkup = `
     <path d="${pathData}" class="arc-hover ${dimClass}" ${
-            pointerEvents} onmousedown="selectObject('${arc.uuid}'); event.stopPropagation();"/>
+            pointerEvents} onpointerdown="selectObject('${arc.uuid}'); event.stopPropagation();"/>
     <path d="${pathData}" class="arc ${isSelected ? 'selected' : ''} ${dimClass}" id="${
             arc.uuid}" style="stroke: ${arcColor};"/>
 `;
@@ -299,7 +316,7 @@ function render() {
         const pColor = p.color || 'black';
 
         const markup = `
-    <g class="${dimClass}" onmousedown="onNodeMouseDown(event, '${p.uuid}')">
+    <g class="${dimClass}" onpointerdown="onNodeMouseDown(event, '${p.uuid}')">
         <circle cx="${p.x}" cy="${p.y}" r="20" class="place ${isSelected ? 'selected' : ''} ${
             isArcSource ? 'source-selected' : ''}" style="stroke: ${pColor};"/>
         ${tokensMarkup}
@@ -323,7 +340,7 @@ function render() {
         const tColor = t.color || 'black';
 
         const markup = `
-    <g class="${dimClass}" onmousedown="onNodeMouseDown(event, '${t.uuid}')">
+    <g class="${dimClass}" onpointerdown="onNodeMouseDown(event, '${t.uuid}')">
         <rect x="${t.x - 10}" y="${t.y - 25}" width="20" height="50" class="transition ${
             isSelected ?
                 'selected' :
@@ -346,7 +363,7 @@ function render() {
 
             const markup = `
     <g class="comment-g ${isSelected ? 'selected' : ''} ${
-                dimClass}" onmousedown="onNodeMouseDown(event, '${c.uuid}')">
+                dimClass}" onpointerdown="onNodeMouseDown(event, '${c.uuid}')">
         <rect x="${c.x - 75}" y="${c.y - 15}" width="150" height="30" class="comment-box"/>
         <text x="${c.x}" y="${c.y + 5}" class="comment-text" style="fill: ${cColor};">${
                 c.text}</text>
