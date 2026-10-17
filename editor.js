@@ -622,6 +622,56 @@ document.body.addEventListener('drop', (event) => {
 });
 
 
+function exportToSVG() {
+    const svgElement = document.getElementById('petri-svg');
+    if (!svgElement) return;
+
+    const svgClone = svgElement.cloneNode(true);
+    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    if (!svgClone.getAttribute('width')) {
+        svgClone.setAttribute('width', svgElement.clientWidth || 800);
+    }
+    if (!svgClone.getAttribute('height')) {
+        svgClone.setAttribute('height', svgElement.clientHeight || 600);
+    }
+
+    let styles = '';
+    for (const stylesheet of document.styleSheets) {
+        try {
+            for (const rule of stylesheet.cssRules) {
+                styles += rule.cssText + '\n';
+            }
+        } catch (e) {
+            // Игнорируем внешние стили (например, со сторонних CDN)
+        }
+    }
+
+    // Внедряем стили внутрь тега <defs> клонированного SVG
+    const styleElement = document.createElement('style');
+    styleElement.textContent = styles;
+    let defs = svgClone.querySelector('defs');
+    if (!defs) {
+        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        svgClone.insertBefore(defs, svgClone.firstChild);
+    }
+    defs.appendChild(styleElement);
+
+    // Сериализуем DOM SVG в строку и создаем файл для скачивания
+    const svgString = new XMLSerializer().serializeToString(svgClone);
+    const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = svgUrl;
+    downloadLink.download = 'petri-net.svg';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(svgUrl);
+}
+
+
 
 // Инициализация холста
 loadFromLocalStorage();
