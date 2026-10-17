@@ -278,6 +278,8 @@ function render() {
     nodesGroup.innerHTML = '';
     arcsGroup.innerHTML = '';
 
+    saveToLocalStorage();
+
     // 1. Рисуем ДУГИ
     state.arcs.forEach(arc => {
         const src = findNode(arc.sourceId);
@@ -510,9 +512,15 @@ function deleteObject(id) {
 
 // --- LOCAL STORAGE ---
 function saveToLocalStorage() {
-    resetSimulation();
-    localStorage.setItem('petri_net_save', JSON.stringify(state));
-    alert('Сеть успешно сохранена в браузере!');
+    const cleanState = structuredClone(state);
+    cleanState.places.forEach(p => {
+        if (p.initialTokens !== undefined) {
+            p.tokens = p.initialTokens;
+        }
+    });
+
+    cleanState.isSimMode = false;
+    localStorage.setItem('petri_net_save', JSON.stringify(cleanState));
 }
 
 function loadFromLocalStorage() {
@@ -521,8 +529,26 @@ function loadFromLocalStorage() {
         state = JSON.parse(data);
         selectObject(null);
         render();
-    } else {
-        alert('Сохранений в браузере не найдено.');
+    }
+}
+
+function clearPetriNet() {
+    const confirmed = confirm(
+        'Вы уверены, что хотите полностью удалить текущую сеть Петри? Это действие нельзя отменить.');
+
+    if (confirmed) {
+        state = {
+            places: [],
+            transitions: [],
+            arcs: [],
+            comments: [],
+            counters: {P: 1, T: 1, C: 1},
+            isSimMode: false
+        };
+
+        selectObject(null);
+        setMode('select');
+        render();
     }
 }
 
@@ -564,4 +590,5 @@ function importFromFile(event) {
 }
 
 // Инициализация холста
+loadFromLocalStorage();
 render();
