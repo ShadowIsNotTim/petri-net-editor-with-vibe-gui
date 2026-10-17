@@ -108,9 +108,25 @@ function fireTransition(transId) {
     render();
 }
 
+let startX = 0, startY = 0;
+let startLeft = 0, startTop = 0;
 // --- ОБРАБОТКА КЛИКОВ НА ХОЛСТЕ ---
 function onCanvasMouseDown(e) {
-    if (e.target !== svg || currentMode === 'simulation') return;
+    if (e.target !== svg) return;
+
+    if (currentMode === 'select' || currentMode === 'simulation') {
+        startX = e.clientX;
+        startY = e.clientY;
+        const container = document.getElementById('canvas-container');
+        startLeft = container.scrollLeft;
+        startTop = container.scrollTop;
+
+        window.addEventListener('pointermove', onCanvasMouseMove);
+        window.addEventListener('pointerup', () => {
+            window.removeEventListener('pointermove', onCanvasMouseMove);
+        });
+        return;
+    }
 
     const rect = svg.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -136,6 +152,14 @@ function onCanvasMouseDown(e) {
         selectObject(null);
     }
     render();
+}
+
+function onCanvasMouseMove(e) {
+    if (e.cancelable) e.preventDefault();
+    const container = document.getElementById('canvas-container');
+
+    container.scrollLeft = startLeft - (e.clientX - startX);
+    container.scrollTop = startTop - (e.clientY - startY);
 }
 
 function onNodeMouseDown(e, id) {
@@ -197,8 +221,8 @@ function onNodeMouseDown(e, id) {
 function onNodeMouseMove(e) {
     if (!dragTarget || !dragTarget.node) return;
     const rect = svg.getBoundingClientRect();
-    dragTarget.node.x = e.offsetX;
-    dragTarget.node.y = e.offsetY;
+    dragTarget.node.x = e.clientX - rect.left;
+    dragTarget.node.y = e.clientY - rect.top;
     render();
 }
 
