@@ -1,6 +1,6 @@
 import {onCanvasMouseDown, onCanvasMouseMove, onNodeMouseDown, onNodeMouseMove, onNodeMouseUp} from './modules/events.js';
 import {render} from './modules/render.js';
-import {clearPetriNet, deleteObject, findComment, findNode, fireTransition, getState, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens} from './modules/state.js';
+import {clearPetriNet, currentMode, deleteObject, findComment, findNode, fireTransition, getState, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens} from './modules/state.js';
 import {exportToFile, exportToSVG, importFromFile, loadFromLocalStorage} from './modules/storage.js';
 import {loadToggleTheme, toggleTheme} from './modules/theme.js';
 
@@ -12,6 +12,52 @@ export function selectObject(id) {
 
     const panel = document.getElementById('properties-panel');
     if (!id) {
+        if (getState().isSimMode) {
+            const state = getState();
+
+            const filteredHistory = state.history.filter(item => {
+                const itemColor = item.color || 'black';
+                const chk = document.getElementById(`chk-filter-${itemColor}`);
+                return chk ? chk.checked : true;
+            });
+
+            if (filteredHistory.length === 0) {
+                panel.innerHTML = `
+                    <div class="property-group"><h3>История симуляции</h3></div>
+                    <p style="color:#888;">История пуста или отфильтрована по цвету.</p>
+                `;
+                return;
+            }
+
+            const colorEmojis = {black: '⚫', red: '🔴', blue: '🔵', green: '🟢'};
+
+            let historyHtml = `
+                <div class="property-group"><h3>Совершенные переходы</h3></div>
+                <div>
+                    <ol style="padding-left: 20px; margin: 0;">
+            `;
+
+            filteredHistory.forEach(item => {
+                const emoji = colorEmojis[item.color] || '⚫';
+                historyHtml += `
+                    <li style="margin-bottom: 6px; font-family: monospace;">
+                        <span>${emoji}</span> 
+                        <b>${item.name}</b>
+                    </li>
+                `;
+            });
+
+            historyHtml += `
+                    </ol>
+                </div>
+                <p style="font-size: 0.85em; color:#888;">Всего шагов: ${
+                filteredHistory.length}</p>
+            `;
+
+            panel.innerHTML = historyHtml;
+            return;
+        }
+
         panel.innerHTML = `<p style="color:#888;">Выберите объект для редактирования</p>`;
         return;
     }

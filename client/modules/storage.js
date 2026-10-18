@@ -1,7 +1,7 @@
 import {selectObject} from '../editor.js';
 
 import {render} from './render.js';
-import {getState, replaceState, resetSimulation} from './state.js';
+import {replaceState, resetSimulation, getCleanState} from './state.js';
 
 
 // --- LOCAL STORAGE ---
@@ -14,16 +14,7 @@ export function saveToLocalStorage() {
 
     const doSave = () => {
         lastSaveTime = Date.now();
-
-        const cleanState = structuredClone(getState());
-        cleanState.places.forEach(p => {
-            if (p.initialTokens !== undefined) {
-                p.tokens = p.initialTokens;
-            }
-        });
-
-        cleanState.isSimMode = false;
-        localStorage.setItem('petri_net_save', JSON.stringify(cleanState));
+        localStorage.setItem('petri_net_save', JSON.stringify(getCleanState()));
     };
 
     if (remaining <= 0) {
@@ -46,7 +37,7 @@ export function loadFromLocalStorage() {
 export function exportToFile() {
     resetSimulation();
     const dataStr =
-        'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(getState(), null, 2));
+        'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(getCleanState(), null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', dataStr);
     downloadAnchor.setAttribute('download', `petri_net_${Date.now()}.json`);

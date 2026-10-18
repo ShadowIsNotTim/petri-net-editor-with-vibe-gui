@@ -5,7 +5,8 @@ let state = {
     arcs: [],         // { uuid, sourceId, targetId, weight }
     comments: [],     // { uuid, text, x, y }
     counters: {P: 1, T: 1, C: 1},
-    isSimMode: false  // Запоминаем статус запущенной симуляции
+    isSimMode: false,  // Запоминаем статус запущенной симуляции
+    history: []        // История совершенных переходов в симуляции
 };
 
 export let currentMode = 'select';  // select, simulation, place, transition, arc, token, comment
@@ -50,12 +51,15 @@ export function setMode(mode) {
     if (currentMode === 'simulation' && mode !== 'simulation') {
         resetSimulation();
         state.isSimMode = false;
+        selectObject(null);
     }
 
     // Вход в режим симуляции
-    if (mode === 'simulation' && currentMode !== 'simulation') {
-        state.places.forEach(p => p.initialTokens = p.tokens);
-        state.isSimMode = true;
+    if (mode === 'simulation') {
+        if (currentMode !== 'simulation') {
+            state.places.forEach(p => p.initialTokens = p.tokens);
+            state.isSimMode = true;
+        }
         selectObject(null);
     }
 
@@ -80,13 +84,15 @@ export function setMode(mode) {
     render();
 }
 
-function updateTokensPropertyWhileSimulation() {
+function updatePropertyWhileSimulation() {
     if (selectedId) {  // Только для обновления количества фишек если выбрана позиция при симуляции
         const selectedPlace = state.places.find(p => p.uuid === selectedId);
         const tokensInput = document.getElementById('property-tokens-input');
         if (selectedPlace && tokensInput) {
             tokensInput.value = selectedPlace.tokens;
         }
+    } else if (currentMode === 'simulation') { // Для обновления переходов при срабатывании в симуляции
+        selectObject(null);
     }
 }
 
@@ -94,8 +100,9 @@ export function resetSimulation() {
     state.places.forEach(p => {
         if (p.initialTokens !== undefined) p.tokens = p.initialTokens;
     });
+    state.history = [];
     render();
-    updateTokensPropertyWhileSimulation();
+    updatePropertyWhileSimulation();
 }
 
 export function generateUUID() {
@@ -112,7 +119,13 @@ export function findComment(id) {
 
 // Проверка активности перехода
 export function isTransitionEnabled(transId) {
-    const inArcs = state.arcs.filter(a => a.targetId === transId);
+    // Выбираем только те входящие дуги, у которых источник (позиция) является видимым
+    const inArcs = state.arcs.filter(a => {
+        if (a.targetId !== transId) return false;
+        const srcPlace = state.places.find(p => p.uuid === a.sourceId);
+        if (!srcPlace || getColorDimClass(srcPlace.color) === 'color-dimmed') return false;
+        return true;
+    });
     if (inArcs.length === 0) return true;
 
     for (let arc of inArcs) {
@@ -127,22 +140,35 @@ export function isTransitionEnabled(transId) {
 // Срабатывание перехода
 export function fireTransition(transId) {
     if (!isTransitionEnabled(transId)) return;
+    const transition = state.transitions.find(t => t.uuid === transId);
 
     const inArcs = state.arcs.filter(a => a.targetId === transId);
     const outArcs = state.arcs.filter(a => a.sourceId === transId);
 
     inArcs.forEach(arc => {
         const srcPlace = state.places.find(p => p.uuid === arc.sourceId);
-        if (srcPlace) srcPlace.tokens -= arc.weight;
+        // Токены списываются, только если позиция существует и она видима
+        if (srcPlace && getColorDimClass(srcPlace.color) !== 'color-dimmed') {
+            srcPlace.tokens -= arc.weight;
+        }
     });
 
     outArcs.forEach(arc => {
         const tgtPlace = state.places.find(p => p.uuid === arc.targetId);
-        if (tgtPlace) tgtPlace.tokens += arc.weight;
+        if (tgtPlace && getColorDimClass(tgtPlace.color) !== 'color-dimmed') {
+            tgtPlace.tokens += arc.weight;
+        }
     });
 
+    if (transition) {
+        state.history.push({
+            name: transition.name,
+            color: transition.color || 'black'
+        });
+    }
+
     render();
-    updateTokensPropertyWhileSimulation();
+    updatePropertyWhileSimulation();
 }
 
 
@@ -150,6 +176,7 @@ export function toggleFilterColor(color) {
     if (visibleColors[color] !== undefined) {
         visibleColors[color] = document.getElementById(`chk-filter-${color}`).checked;
         render();
+        updatePropertyWhileSimulation();
     }
 }
 
@@ -230,11 +257,24 @@ export function clearPetriNet() {
             arcs: [],
             comments: [],
             counters: {P: 1, T: 1, C: 1},
-            isSimMode: false
+            isSimMode: false,
+            history: []
         };
 
         selectObject(null);
         setMode('select');
         render();
     }
+}
+
+export function getCleanState() {
+    const cleanState = structuredClone(getState());
+    cleanState.places.forEach(p => {
+        if (p.initialTokens !== undefined) {
+            p.tokens = p.initialTokens;
+        }
+    });
+    cleanState.history = [];
+    cleanState.isSimMode = false;
+    return cleanState;
 }
