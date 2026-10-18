@@ -80,11 +80,22 @@ export function setMode(mode) {
     render();
 }
 
+function updateTokensPropertyWhileSimulation() {
+    if (selectedId) {  // Только для обновления количества фишек если выбрана позиция при симуляции
+        const selectedPlace = state.places.find(p => p.uuid === selectedId);
+        const tokensInput = document.getElementById('property-tokens-input');
+        if (selectedPlace && tokensInput) {
+            tokensInput.value = selectedPlace.tokens;
+        }
+    }
+}
+
 export function resetSimulation() {
     state.places.forEach(p => {
         if (p.initialTokens !== undefined) p.tokens = p.initialTokens;
     });
     render();
+    updateTokensPropertyWhileSimulation();
 }
 
 export function generateUUID() {
@@ -131,14 +142,7 @@ export function fireTransition(transId) {
     });
 
     render();
-
-    if (selectedId) {  // Только для обновления количества фишек если выбрана позиция при симуляции
-        const selectedPlace = state.places.find(p => p.uuid === selectedId);
-        const tokensInput = document.getElementById('property-tokens-input');
-        if (selectedPlace && tokensInput) {
-            tokensInput.value = selectedPlace.tokens;
-        }
-    }
+    updateTokensPropertyWhileSimulation();
 }
 
 
@@ -181,7 +185,9 @@ export function updateTokens(id, value) {
     const place = state.places.find(p => p.uuid === id);
     if (place) {
         place.tokens = Math.max(0, parseInt(value) || 0);
-        place.initialTokens = place.tokens;
+        if (!state.isSimMode) {
+            place.initialTokens = place.tokens;
+        }
         render();
     }
 }
