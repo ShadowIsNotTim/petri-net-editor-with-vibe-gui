@@ -21,7 +21,7 @@ export let visibleColors = {
     green: true
 };
 
-import {render} from './render.js';
+import {render, updatePropertyWhileSimulation} from './render.js';
 import {selectObject} from '../editor.js';
 
 export function setSelectedId(id) {
@@ -84,18 +84,6 @@ export function setMode(mode) {
     render();
 }
 
-function updatePropertyWhileSimulation() {
-    if (selectedId) {  // Только для обновления количества фишек если выбрана позиция при симуляции
-        const selectedPlace = state.places.find(p => p.uuid === selectedId);
-        const tokensInput = document.getElementById('property-tokens-input');
-        if (selectedPlace && tokensInput) {
-            tokensInput.value = selectedPlace.tokens;
-        }
-    } else if (currentMode === 'simulation') { // Для обновления переходов при срабатывании в симуляции
-        selectObject(null);
-    }
-}
-
 export function resetSimulation() {
     state.places.forEach(p => {
         if (p.initialTokens !== undefined) p.tokens = p.initialTokens;
@@ -122,6 +110,7 @@ export function isTransitionEnabled(transId) {
     // Выбираем только те входящие дуги, у которых источник (позиция) является видимым
     const inArcs = state.arcs.filter(a => {
         if (a.targetId !== transId) return false;
+        if (getColorDimClass(a.color) === 'color-dimmed') return false;  // А также видима дуга
         const srcPlace = state.places.find(p => p.uuid === a.sourceId);
         if (!srcPlace || getColorDimClass(srcPlace.color) === 'color-dimmed') return false;
         return true;
@@ -146,25 +135,26 @@ export function fireTransition(transId) {
     const outArcs = state.arcs.filter(a => a.sourceId === transId);
 
     inArcs.forEach(arc => {
-        const srcPlace = state.places.find(p => p.uuid === arc.sourceId);
-        // Токены списываются, только если позиция существует и она видима
-        if (srcPlace && getColorDimClass(srcPlace.color) !== 'color-dimmed') {
-            srcPlace.tokens -= arc.weight;
+        if (getColorDimClass(arc.color) !== 'color-dimmed') {
+            const srcPlace = state.places.find(p => p.uuid === arc.sourceId);
+            // Токены списываются, только если позиция существует и она видима
+            if (srcPlace && getColorDimClass(srcPlace.color) !== 'color-dimmed') {
+                srcPlace.tokens -= arc.weight;
+            }
         }
     });
 
     outArcs.forEach(arc => {
-        const tgtPlace = state.places.find(p => p.uuid === arc.targetId);
-        if (tgtPlace && getColorDimClass(tgtPlace.color) !== 'color-dimmed') {
-            tgtPlace.tokens += arc.weight;
+        if (getColorDimClass(arc.color) !== 'color-dimmed') {
+            const tgtPlace = state.places.find(p => p.uuid === arc.targetId);
+            if (tgtPlace && getColorDimClass(tgtPlace.color) !== 'color-dimmed') {
+                tgtPlace.tokens += arc.weight;
+            }
         }
     });
 
     if (transition) {
-        state.history.push({
-            name: transition.name,
-            color: transition.color || 'black'
-        });
+        state.history.push({name: transition.name, color: transition.color || 'black'});
     }
 
     render();

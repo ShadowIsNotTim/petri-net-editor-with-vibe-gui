@@ -1,5 +1,6 @@
 import {arcSourceId, currentMode, findNode, getColorDimClass, isTransitionEnabled, selectedId, getState} from './state.js';
 import {saveToLocalStorage} from './storage.js';
+import {selectObject} from '../editor.js';
 
 const svg = document.getElementById('petri-svg');
 const nodesGroup = document.getElementById('nodes-group');
@@ -131,5 +132,17 @@ export function render() {
 
             nodesGroup.insertAdjacentHTML('beforeend', markup);
         });
+    }
+}
+
+export function updatePropertyWhileSimulation() {
+    if (selectedId) {  // Только для обновления количества фишек если выбрана позиция при симуляции
+        const selectedPlace = getState().places.find(p => p.uuid === selectedId);
+        const tokensInput = document.getElementById('property-tokens-input');
+        if (selectedPlace && tokensInput) {
+            tokensInput.value = selectedPlace.tokens;
+        }
+    } else if (currentMode === 'simulation') { // Для обновления переходов при срабатывании в симуляции
+        selectObject(null);
     }
 }
