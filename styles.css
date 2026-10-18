@@ -69,6 +69,7 @@ button {
     text-align: left;
     font-size: 14px;
     flex-shrink: 0;
+    touch-action: manipulation;
 }
 
 button:hover {

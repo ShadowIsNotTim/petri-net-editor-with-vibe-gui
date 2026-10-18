@@ -184,6 +184,7 @@ function onNodeMouseDown(e, id) {
         if (findComment(id)) return;
         if (!arcSourceId) {
             arcSourceId = id;
+            window.addEventListener('pointerup', onNodeMouseUp);
         } else {
             const srcIsPlace = state.places.some(p => p.uuid === arcSourceId);
             const tgtIsPlace = state.places.some(p => p.uuid === id);
@@ -234,7 +235,21 @@ function onNodeMouseMove(e) {
     render();
 }
 
-function onNodeMouseUp() {
+function onNodeMouseUp(e) {
+    if (currentMode === 'arc' && arcSourceId) { // Размещение дуги "натягиванием"
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const targetElement = el?.closest('[onpointerdown]');
+        const pointerDownAttr = targetElement?.getAttribute('onpointerdown');
+        
+        const match = pointerDownAttr?.match(/onNodeMouseDown\(event,\s*'([^']+)'\)/);
+        const targetId = match ? match[1] : null;
+
+        if (targetId && targetId !== arcSourceId) {
+            onNodeMouseDown(e, targetId);
+        }
+        // Ничего не делаем, если отпустили в пустоту
+    }
+
     dragTarget = null;
     window.removeEventListener('pointermove', onNodeMouseMove);
     window.removeEventListener('pointerup', onNodeMouseUp);
@@ -519,16 +534,32 @@ function deleteObject(id) {
 }
 
 // --- LOCAL STORAGE ---
+let lastSaveTime = 0;
+let saveTimeout = null;
 function saveToLocalStorage() {
-    const cleanState = structuredClone(state);
-    cleanState.places.forEach(p => {
-        if (p.initialTokens !== undefined) {
-            p.tokens = p.initialTokens;
-        }
-    });
+    const now = Date.now();
+    const remaining = 660 - (now - lastSaveTime);
+    clearTimeout(saveTimeout);
 
-    cleanState.isSimMode = false;
-    localStorage.setItem('petri_net_save', JSON.stringify(cleanState));
+    const doSave = () => {
+        lastSaveTime = Date.now();
+
+        const cleanState = structuredClone(state);
+        cleanState.places.forEach(p => {
+            if (p.initialTokens !== undefined) {
+                p.tokens = p.initialTokens;
+            }
+        });
+
+        cleanState.isSimMode = false;
+        localStorage.setItem('petri_net_save', JSON.stringify(cleanState));
+    };
+
+    if (remaining <= 0) {
+        doSave();
+    } else {
+        saveTimeout = setTimeout(doSave, remaining);
+    }
 }
 
 function loadFromLocalStorage() {
