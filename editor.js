@@ -196,8 +196,16 @@ function onNodeMouseDown(e, id) {
                     existingArc.weight = (existingArc.weight || 1) + 1;
                     selectObject(existingArc.uuid);
                 } else {
-                    const newArc =
-                        {uuid: generateUUID(), sourceId: arcSourceId, targetId: id, weight: 1};
+                    const transitionId = srcIsPlace ? id : arcSourceId;
+                    const transition = state.transitions?.find(t => t.uuid === transitionId);
+                    const transitionColor = transition?.color
+                    const newArc = {
+                        uuid: generateUUID(),
+                        sourceId: arcSourceId,
+                        targetId: id,
+                        weight: 1,
+                        ...(transitionColor && {color: transitionColor})
+                    };
                     state.arcs.push(newArc);
                     selectObject(newArc.uuid);
                 }
@@ -581,7 +589,6 @@ function importFromFile(event) {
                 state = importedState;
                 selectObject(null);
                 render();
-                alert('Сеть успешно импортирована из файла!');
             } else {
                 alert('Неверный формат файла сети Петри.');
             }

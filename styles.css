@@ -1,0 +1,286 @@
+* {
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+body {
+    display: flex;
+    margin: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: #f5f5f5;
+    font-size: 15px;
+}
+
+/* Стили для фонового оверлея при перетаскивании */
+body.drag-active::after {
+    content: "Перетащите JSON-файл сети Петри сюда";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-family: sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px dashed #3b82f6;
+    box-sizing: border-box;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+
+/* ПАНЕЛИ: Добавлена умная прокрутка, если контент не влезает */
+#left-menu,
+#right-menu {
+    width: 260px;
+    max-height: 100%;
+    background: #ffffff;
+    padding: 15px;
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10;
+    overflow-y: auto;
+    /* Появляется скролл только при необходимости */
+}
+
+#right-menu {
+    width: 180px;
+    border-right: none;
+    border-left: 1px solid #ccc;
+}
+
+/* Кнопки и инпуты */
+button {
+    padding: 11px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    background: #eee;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: left;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+button:hover {
+    background: #ddd;
+}
+
+button.active {
+    background: #007fff;
+    color: white;
+    border-color: #0056b3;
+}
+
+input,
+select {
+    padding: 9px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    font-size: 14px;
+}
+
+h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.section-title {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.property-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.btn-danger {
+    background: #ffdddd;
+    color: red;
+    border-color: #ffcccc;
+}
+
+.btn-danger:hover {
+    background: #ffcccc;
+}
+
+/* Индикатор симуляции */
+#sim-status {
+    padding: 10px;
+    border-radius: 4px;
+    background: #fff3cd;
+    color: #856404;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    display: none;
+    flex-shrink: 0;
+}
+
+/* Рабочая область */
+#canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    background: #fafafa;
+}
+
+svg {
+    width: 2000px;
+    height: 2000px;
+    background: white;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+    cursor: crosshair;
+
+    touch-action: none !important;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Стили SVG элементов */
+.place {
+    fill: #fff;
+    stroke: #333;
+    stroke-width: 2;
+    cursor: move;
+}
+
+.transition {
+    fill: #fff;
+    stroke: #333;
+    stroke-width: 2;
+    cursor: pointer;
+}
+
+.transition.enabled {
+    fill: #0ed500;
+    stroke: #00de34;
+    stroke-width: 2.5;
+}
+
+.arc {
+    fill: none;
+    stroke: #555;
+    stroke-width: 2;
+    marker-end: url(#arrow);
+    cursor: pointer;
+}
+
+.arc-hover {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 10;
+    cursor: pointer;
+}
+
+.token {
+    fill: #333;
+    pointer-events: none;
+}
+
+.label {
+    font-size: 14px;
+    pointer-events: none;
+    text-anchor: middle;
+    font-weight: bold;
+    fill: #111;
+}
+
+.arc-weight {
+    font-size: 13px;
+    fill: blue;
+    pointer-events: none;
+    font-weight: bold;
+}
+
+.comment-text {
+    font-size: 15px;
+    fill: #555;
+    font-style: italic;
+    pointer-events: none;
+    text-anchor: middle;
+}
+
+.comment-box {
+    fill: transparent;
+    stroke: transparent;
+    cursor: move;
+}
+
+.selected {
+    stroke: #007fff !important;
+    stroke-width: 3;
+}
+
+.comment-g.selected .comment-box {
+    stroke: #007fff;
+    stroke-dasharray: 4;
+    stroke-width: 1.5;
+}
+
+.source-selected {
+    stroke: #ff9900 !important;
+    stroke-width: 3px !important;
+    stroke-dasharray: 4;
+}
+
+body.mode-simulation svg {
+    cursor: default;
+}
+
+body.mode-simulation .place {
+    cursor: default;
+}
+
+.color-dimmed {
+    opacity: 0.15 !important;
+    pointer-events: none;
+}
+
+.color-filter-box {
+    display: flex;
+    gap: 12px;
+    background: #fdfdfd;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.color-filter-box label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+    user-select: none;
+}
+
+.color-filter-box input {
+    width: auto;
+    margin: 0 3px 0 0;
+    cursor: pointer;
+}
