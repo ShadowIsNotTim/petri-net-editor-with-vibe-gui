@@ -13,6 +13,10 @@ body {
     font-size: 15px;
 }
 
+body.dark-theme {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 /* Стили для фонового оверлея при перетаскивании */
 body.drag-active::after {
     content: "Перетащите JSON-файл сети Петри сюда";

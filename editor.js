@@ -106,6 +106,14 @@ function fireTransition(transId) {
     });
 
     render();
+
+    if (selectedId) {  // Только для обновления количества фишек если выбрана позиция при симуляции
+        const selectedPlace = state.places.find(p => p.uuid === selectedId);
+        const tokensInput = document.getElementById('property-tokens-input');
+        if (selectedPlace && tokensInput) {
+            tokensInput.value = selectedPlace.tokens;
+        }
+    }
 }
 
 let startX = 0, startY = 0;
@@ -167,7 +175,11 @@ function onNodeMouseDown(e, id) {
 
     if (currentMode === 'simulation') {
         const isTrans = state.transitions.some(t => t.uuid === id);
-        if (isTrans) fireTransition(id);
+        const isPlace = state.places.some(t => t.uuid === id);
+        if (isTrans)
+            fireTransition(id);
+        else if (isPlace)
+            selectObject(id);  // Для работы с ресурсами и разметками во время симуляции
         return;
     }
 
@@ -236,11 +248,11 @@ function onNodeMouseMove(e) {
 }
 
 function onNodeMouseUp(e) {
-    if (currentMode === 'arc' && arcSourceId) { // Размещение дуги "натягиванием"
+    if (currentMode === 'arc' && arcSourceId) {  // Размещение дуги "натягиванием"
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const targetElement = el?.closest('[onpointerdown]');
         const pointerDownAttr = targetElement?.getAttribute('onpointerdown');
-        
+
         const match = pointerDownAttr?.match(/onNodeMouseDown\(event,\s*'([^']+)'\)/);
         const targetId = match ? match[1] : null;
 
@@ -426,7 +438,6 @@ function render() {
 
 // --- ПАНЕЛЬ СВОЙСТВ (СПРАВА) ---
 function selectObject(id) {
-    if (currentMode === 'simulation') return;
     selectedId = id;
     render();
 
@@ -446,7 +457,7 @@ function selectObject(id) {
             <div class="property-group"><h3>Позиция</h3></div>
             <div class="property-group"><label>Имя:</label><input type="text" value="${
             place.name}" oninput="updateName('${id}', this.value)"></div>
-            <div class="property-group"><label>Маркеры (фишки):</label><input type="number" min="0" value="${
+            <div class="property-group"><label>Маркеры (фишки):</label><input  id="property-tokens-input" type="number" min="0" value="${
             place.tokens}" oninput="updateTokens('${id}', this.value)"></div>
         `;
     } else if (transition) {
@@ -501,7 +512,7 @@ function updateName(id, newName) {
 function updateTokens(id, value) {
     const place = state.places.find(p => p.uuid === id);
     if (place) {
-        place.tokens = parseInt(value) || 0;
+        place.tokens = Math.max(0, parseInt(value) || 0);
         place.initialTokens = place.tokens;
         render();
     }
@@ -510,7 +521,7 @@ function updateTokens(id, value) {
 function updateArcWeight(id, value) {
     const arc = state.arcs.find(a => a.uuid === id);
     if (arc) {
-        arc.weight = parseInt(value) || 1;
+        arc.weight = Math.max(1, parseInt(value) || 1);
         render();
     }
 }
@@ -710,7 +721,34 @@ function exportToSVG() {
 }
 
 
+// Функция переключения темы (вызывается по клику на кнопку)
+function toggleTheme() {
+    const body = document.body;
+    const btn = document.getElementById('theme-btn');
+    body.classList.toggle('dark-theme');
+    
+    const isDark = body.classList.contains('dark-theme');
+    if (isDark) {
+        btn.innerHTML = '☀️ Светлая тема';
+    } else {
+        btn.innerHTML = '🌙 Тёмная тема';
+    }
+    
+    localStorage.setItem('inverted', isDark);
+}
+
+function loadToggleTheme() {
+    if (localStorage.getItem('inverted') === 'true') {
+        document.addEventListener("DOMContentLoaded", () => {
+            document.body.classList.add('dark-theme');
+            const btn = document.getElementById('theme-btn');
+            if (btn) btn.innerHTML = '☀️ Светлая тема';
+        });
+    }
+}
+
 
 // Инициализация холста
 loadFromLocalStorage();
+loadToggleTheme();
 render();
