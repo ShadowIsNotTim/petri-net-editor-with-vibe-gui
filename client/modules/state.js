@@ -9,7 +9,8 @@ let state = {
 
 let simulation = {
     isSimMode: false,  // Запоминаем статус запущенной симуляции
-    history: []        // История совершенных переходов в симуляции
+    history: [],       // История совершенных переходов в симуляции
+    redoHistory: []    // Стек для возврата отката (Redo)
 }
 
 export let currentMode = 'select';  // select, simulation, place, transition, arc, token, comment
@@ -85,10 +86,31 @@ export function setMode(mode) {
 
     document.getElementById('btn-reset-sim').style.display = isSim ? 'block' : 'none';
     document.getElementById('btn-apply-sim').style.display = isSim ? 'block' : 'none';
+    document.getElementById('btn-undo-redo-sim').style.display = isSim ? 'flex' : 'none';
     document.body.classList.toggle('mode-simulation', isSim);
 
     arcSourceId = null;
     render();
+}
+
+
+function createTokensSnapshot() {
+    const snapshot = {};
+    state.places.forEach(p => {
+        snapshot[p.uuid] = p.tokens;
+    });
+    return snapshot;
+}
+
+function restoreTokensFromSnapshot(snapshot) {
+    if (!snapshot) return;
+    state.places.forEach(p => {
+        if (snapshot[p.uuid] !== undefined) {
+            p.tokens = snapshot[p.uuid];
+        }
+    });
+    render();
+    updatePropertyWhileSimulation();
 }
 
 export function resetSimulation() {
@@ -96,9 +118,26 @@ export function resetSimulation() {
         if (p.initialTokens !== undefined) p.tokens = p.initialTokens;
     });
     simulation.history = [];
+    simulation.redoHistory = [];
     render();
     updatePropertyWhileSimulation();
 }
+
+export function applySimulationState() {
+    const confirmed = confirm(
+        'Вы уверены, что хотите сделать текущее состояние маркеров начальной разметкой? Текущая история симуляции будет очищена.');
+
+    if (confirmed) {
+        state.places.forEach(p => {
+            p.initialTokens = p.tokens;
+        });
+        simulation.history = [];
+        simulation.redoHistory = [];
+        render();
+        updatePropertyWhileSimulation();
+    }
+}
+
 
 export function findNode(id) {
     return state.places.find(p => p.uuid === id) || state.transitions.find(t => t.uuid === id);
@@ -130,9 +169,10 @@ export function isTransitionEnabled(transId) {
 }
 
 // Срабатывание перехода
-export function fireTransition(transId) {
+export function fireTransition(transId, isRedoAction = false) {
     if (!isTransitionEnabled(transId)) return;
     const transition = state.transitions.find(t => t.uuid === transId);
+    const snapshotBefore = createTokensSnapshot();
 
     const inArcs = state.arcs.filter(a => a.targetId === transId);
     const outArcs = state.arcs.filter(a => a.sourceId === transId);
@@ -157,7 +197,22 @@ export function fireTransition(transId) {
     });
 
     if (transition) {
-        simulation.history.push({name: transition.name, color: transition.color || 'black'});
+        if (!isRedoAction) {
+            simulation.history.push({
+                uuid: transId,
+                name: transition.name,
+                color: transition.color || 'black',
+                tokensSnapshot: snapshotBefore
+            });
+            simulation.redoHistory = [];
+        } else {
+            simulation.history.push({
+                uuid: transId,
+                name: transition.name,
+                color: transition.color || 'black',
+                tokensSnapshot: snapshotBefore
+            });
+        }
     }
 
     render();
@@ -204,7 +259,17 @@ export function updateName(id, newName) {
 export function updateTokens(id, value) {
     const place = state.places.find(p => p.uuid === id);
     if (place) {
-        place.tokens = Math.max(0, parseInt(value) || 0);
+        let tokens = Math.max(0, parseInt(value) || 0);
+        if (simulation.isSimMode && place.tokens != tokens) {
+            simulation.history.push({
+                name: `Фишка "${place.name}"="${tokens}"`,
+                color: 'white',
+                tokensSnapshot: createTokensSnapshot()
+            });
+            simulation.redoHistory = [];
+        }
+
+        place.tokens = tokens;
         if (!simulation.isSimMode) {
             place.initialTokens = place.tokens;
         }
@@ -238,28 +303,12 @@ export function deleteObject(id) {
     render();
 }
 
-export function applySimulationState() {
-    const confirmed = confirm(
-        'Вы уверены, что хотите сделать текущее состояние маркеров начальной разметкой? Текущая история симуляции будет очищена.');
-
-    if (confirmed) {
-        state.places.forEach(p => {
-            p.initialTokens = p.tokens;
-        });
-
-        simulation.history = [];
-        render();
-        updatePropertyWhileSimulation();
-    }
-}
-
 export function clearPetriNet() {
     const confirmed = confirm(
         'Вы уверены, что хотите полностью удалить текущую сеть Петри? Это действие нельзя отменить.');
 
     if (confirmed) {
         state = {places: [], transitions: [], arcs: [], comments: [], counters: {P: 1, T: 1, C: 1}};
-
         selectObject(null);
         setMode('select');
         render();
@@ -274,4 +323,41 @@ export function getCleanState() {
         }
     });
     return cleanState;
+}
+
+
+// --- ОПЕРАЦИЯ ОТКАТА И ВОЗВРАТА ОТКАТА (UNDO / REDO) ---
+export function undoTransition() {
+    if (simulation.history.length === 0) return;
+
+    const snapshotCurrent = createTokensSnapshot();
+    const lastAction = simulation.history.pop();
+    restoreTokensFromSnapshot(lastAction.tokensSnapshot);
+
+    simulation.redoHistory.push({
+        uuid: lastAction.uuid,
+        name: lastAction.name,
+        color: lastAction.color,
+        tokensSnapshot: snapshotCurrent
+    });
+    render();
+    updatePropertyWhileSimulation();
+}
+
+export function redoTransition() {
+    if (simulation.redoHistory.length === 0) return;
+
+    const nextAction = simulation.redoHistory.pop();
+    if (nextAction.uuid) {
+        fireTransition(nextAction.uuid, true);
+    } else {
+        simulation.history.push({
+            name: nextAction.name,
+            color: nextAction.color,
+            tokensSnapshot: createTokensSnapshot()
+        });
+        restoreTokensFromSnapshot(nextAction.tokensSnapshot);
+        render();
+        updatePropertyWhileSimulation();
+    }
 }

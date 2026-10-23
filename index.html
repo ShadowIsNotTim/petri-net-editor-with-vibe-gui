@@ -14,11 +14,19 @@
     <div id="left-menu">
         <h3>Инструменты</h3>
         <button id="btn-select" class="active" onclick="setMode('select')">🖐️ Выделение / Движение</button>
+        
         <button id="btn-simulation" onclick="setMode('simulation')">▶️ Режим Симуляции</button>
         <button id="btn-reset-sim" onclick="resetSimulation()"
             style="display:none; background: #f8d7da; color: #721c24;">🔄 Сбросить к начальной</button>
         <button id="btn-apply-sim" onclick="applySimulationState()"
             style="display:none; background: #d4edda; color: #155724;">✅ Утвердить текущую разметку</button>
+
+        <div id="btn-undo-redo-sim" style="display:none; gap: 8px; width: 100%;">
+            <button id="btn-undo-sim" onclick="undoTransition()"
+                style="flex: 1; background: #fff3cd; color: #856404;">↩️ Назад</button>
+            <button id="btn-redo-sim" onclick="redoTransition()"
+                style="flex: 1; background: #e7eeff; color: #383d41;">↪️ Вперед</button>
+        </div>
 
         <button id="btn-place" onclick="setMode('place')">⚪ Позиция (P)</button>
         <button id="btn-transition" onclick="setMode('transition')">⬛ Переход (T)</button>
@@ -73,7 +81,7 @@
     </div>
 
     <script type="module" src="./client/editor.js"></script>
-    <!-- <script>
+    <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -81,7 +89,7 @@
                     .catch(err => console.log('Ошибка регистрации Service Worker:', err));
             });
         }
-    </script> -->
+    </script>
 </body>
 
 </html>
