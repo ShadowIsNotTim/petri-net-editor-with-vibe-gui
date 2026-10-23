@@ -78,6 +78,10 @@ export function onCanvasMouseMove(e) {
 }
 
 export function onNodeMouseDown(e, id) {
+    if (e.pointerType === 'touch' && (!e.isPrimary || isPinching)) {
+        onNodeMouseUp(e);
+        return;
+    }
     e.stopPropagation();
 
     if (currentMode === 'simulation') {
@@ -148,7 +152,12 @@ export function onNodeMouseDown(e, id) {
 }
 
 export function onNodeMouseMove(e) {
+    if (e.pointerType === 'touch' && (!e.isPrimary || isPinching)) {
+        onNodeMouseUp(e);
+        return;
+    }
     if (!dragTarget || !dragTarget.node) return;
+    
     const rect = svg.getBoundingClientRect();
     dragTarget.node.x = (e.clientX - rect.left - translateX) / scale;
     dragTarget.node.y = (e.clientY - rect.top - translateY) / scale;
@@ -156,7 +165,7 @@ export function onNodeMouseMove(e) {
 }
 
 export function onNodeMouseUp(e) {
-    if (currentMode === 'arc' && arcSourceId) {  // Размещение дуги "натягиванием"
+    if (e && currentMode === 'arc' && arcSourceId) {  // Размещение дуги "натягиванием"
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const targetElement = el?.closest('[onpointerdown]');
         const pointerDownAttr = targetElement?.getAttribute('onpointerdown');
@@ -214,6 +223,10 @@ svg.addEventListener('wheel', function(e) {
 let touchStartPoints = [];
 svg.addEventListener('touchstart', function(e) {
     if (e.touches.length === 2) {
+        setDragTarget(null);
+        window.removeEventListener('pointermove', onNodeMouseMove);
+        window.removeEventListener('pointerup', onNodeMouseUp);
+
         isPinching = true;
         e.preventDefault(); 
 

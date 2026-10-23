@@ -77,7 +77,7 @@ export function selectObject(id) {
                 <div class="property-group"><label>Маркеры (фишки):</label><input  id="property-tokens-input" type="number" min="0" value="${
             place.tokens}" onchange="updateTokens('${id}', this.value)"></div>
                 <div class="tokens-mobile-row" style="display: flex; gap: 6px; align-items: center; width: 100%;">
-                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = (parseInt(input.value) || 0) - 1; input.value = val; updateTokens('${
+                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = Math.max(0, (parseInt(input.value) || 0) - 1); input.value = val; updateTokens('${
             id}', val);"
                         style="font-weight: bold; background: #fff3cd; color: #856404;">-1</button>
                     
