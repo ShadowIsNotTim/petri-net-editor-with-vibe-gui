@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link rel="manifest" href="./client/manifest.json">
-    <title>Минимальный Редактор Сетей Петри</title>
+    <title>Редактор Сетей Петри</title>
     <link rel="stylesheet" href="./client/styles.css">
 </head>
 
@@ -17,6 +17,8 @@
         <button id="btn-simulation" onclick="setMode('simulation')">▶️ Режим Симуляции</button>
         <button id="btn-reset-sim" onclick="resetSimulation()"
             style="display:none; background: #f8d7da; color: #721c24;">🔄 Сбросить к начальной</button>
+        <button id="btn-apply-sim" onclick="applySimulationState()"
+            style="display:none; background: #d4edda; color: #155724;">✅ Утвердить текущую разметку</button>
 
         <button id="btn-place" onclick="setMode('place')">⚪ Позиция (P)</button>
         <button id="btn-transition" onclick="setMode('transition')">⬛ Переход (T)</button>
@@ -36,7 +38,8 @@
         <button onclick="clearPetriNet()" class="btn-danger"
             style="background: #fff0f0; color: #d93838; border-color: #f5c2c2;">🧹 Очистить всё</button>
         <button onclick="exportToSVG()" style="background: #fffbe6; border-color: #ffe58f;">🎨 Экспорт в SVG</button>
-        <button onclick="toggleTheme()" id="theme-btn" style="background: #f5f5f5; color: #262626; border-color: #d9d9d9;">🌓 Сменить тему</button>
+        <button onclick="toggleTheme()" id="theme-btn"
+            style="background: #f5f5f5; color: #262626; border-color: #d9d9d9;">🌓 Сменить тему</button>
 
         <div class="section-title">Файлы</div>
         <button onclick="exportToFile()" style="background: #eef7ff; border-color: #bce0ff;">💾 Экспорт в JSON</button>

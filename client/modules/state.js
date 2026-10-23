@@ -84,6 +84,7 @@ export function setMode(mode) {
     }
 
     document.getElementById('btn-reset-sim').style.display = isSim ? 'block' : 'none';
+    document.getElementById('btn-apply-sim').style.display = isSim ? 'block' : 'none';
     document.body.classList.toggle('mode-simulation', isSim);
 
     arcSourceId = null;
@@ -237,19 +238,27 @@ export function deleteObject(id) {
     render();
 }
 
+export function applySimulationState() {
+    const confirmed = confirm(
+        'Вы уверены, что хотите сделать текущее состояние маркеров начальной разметкой? Текущая история симуляции будет очищена.');
+
+    if (confirmed) {
+        state.places.forEach(p => {
+            p.initialTokens = p.tokens;
+        });
+
+        simulation.history = [];
+        render();
+        updatePropertyWhileSimulation();
+    }
+}
 
 export function clearPetriNet() {
     const confirmed = confirm(
         'Вы уверены, что хотите полностью удалить текущую сеть Петри? Это действие нельзя отменить.');
 
     if (confirmed) {
-        state = {
-            places: [],
-            transitions: [],
-            arcs: [],
-            comments: [],
-            counters: {P: 1, T: 1, C: 1}
-        };
+        state = {places: [], transitions: [], arcs: [], comments: [], counters: {P: 1, T: 1, C: 1}};
 
         selectObject(null);
         setMode('select');
@@ -264,7 +273,5 @@ export function getCleanState() {
             p.tokens = p.initialTokens;
         }
     });
-    cleanState.history = [];
-    cleanState.isSimMode = false;
     return cleanState;
 }

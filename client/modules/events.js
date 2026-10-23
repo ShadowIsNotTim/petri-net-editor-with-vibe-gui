@@ -1,7 +1,7 @@
 import {selectObject} from '../editor.js';
 
 import {render} from './render.js';
-import {arcSourceId, currentMode, deleteObject, dragTarget, findComment, findNode, fireTransition, selectedId, setArcSourceId, setDragTarget, setSelectedId, getState} from './state.js';
+import {arcSourceId, currentMode, deleteObject, dragTarget, findComment, findNode, fireTransition, getState, selectedId, setArcSourceId, setDragTarget, setSelectedId} from './state.js';
 import {importFromFile} from './storage.js';
 
 
@@ -13,7 +13,8 @@ let startLeft = 0, startTop = 0;
 export function onCanvasMouseDown(e) {
     if (e.target !== svg) return;
 
-    if (currentMode === 'select' || currentMode === 'simulation') {
+    if (currentMode === 'select' || currentMode === 'simulation' ||
+        (currentMode === 'arc' || currentMode == 'token')) {
         startX = e.clientX;
         startY = e.clientY;
         const container = document.getElementById('canvas-container');
@@ -43,7 +44,7 @@ export function onCanvasMouseDown(e) {
         selectObject(newTrans.uuid);
     } else if (currentMode === 'comment') {
         const id = `C${getState().counters.C++}`;
-        const newComment = {uuid: id, text: `Комментарий ${count}`, x, y};
+        const newComment = {uuid: id, text: '', x, y};
         if (!getState().comments) getState().comments = [];
         getState().comments.push(newComment);
         selectObject(newComment.uuid);
@@ -94,8 +95,8 @@ export function onNodeMouseDown(e, id) {
             const tgtIsPlace = getState().places.some(p => p.uuid === id);
 
             if (srcIsPlace !== tgtIsPlace) {
-                const existingArc =
-                    getState().arcs.find(arc => arc.sourceId === arcSourceId && arc.targetId === id);
+                const existingArc = getState().arcs.find(
+                    arc => arc.sourceId === arcSourceId && arc.targetId === id);
 
                 if (existingArc) {
                     existingArc.weight = (existingArc.weight || 1) + 1;

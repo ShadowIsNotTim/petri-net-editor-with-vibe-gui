@@ -14,7 +14,7 @@ body {
 }
 
 body.dark-theme {
-  filter: invert(1) hue-rotate(180deg);
+    filter: invert(1) hue-rotate(180deg);
 }
 
 /* Стили для фонового оверлея при перетаскивании */
@@ -221,29 +221,9 @@ svg {
     font-weight: bold;
 }
 
-.comment-text {
-    font-size: 15px;
-    fill: #555;
-    font-style: italic;
-    pointer-events: none;
-    text-anchor: middle;
-}
-
-.comment-box {
-    fill: transparent;
-    stroke: transparent;
-    cursor: move;
-}
-
 .selected {
     stroke: #007fff !important;
     stroke-width: 3;
-}
-
-.comment-g.selected .comment-box {
-    stroke: #007fff;
-    stroke-dasharray: 4;
-    stroke-width: 1.5;
 }
 
 .source-selected {
@@ -288,4 +268,45 @@ body.mode-simulation .place {
     width: auto;
     margin: 0 3px 0 0;
     cursor: pointer;
+}
+
+
+
+.comment-g {
+    cursor: move;
+}
+
+.comment-click-handler {
+    fill: transparent;
+    stroke: transparent;
+    pointer-events: all;
+}
+
+.comment-g.selected .comment-click-handler {
+    stroke: #007bff;
+    stroke-dasharray: 4;
+}
+
+.comment-foreign-object {
+    pointer-events: none;
+}
+
+.comment-box-html {
+    width: 100%;
+    height: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: hidden;
+    padding: 4px;
+    font-size: 15px;
+    fill: #555;
+    font-style: italic;
+}
+
+.comment-g.is-empty {
+    opacity: 0.4;
+}
+
+.comment-g.is-empty .comment-box-html {
+    font-style: italic;
 }

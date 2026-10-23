@@ -1,6 +1,6 @@
 import {onCanvasMouseDown, onCanvasMouseMove, onNodeMouseDown, onNodeMouseMove, onNodeMouseUp} from './modules/events.js';
 import {render} from './modules/render.js';
-import {clearPetriNet, currentMode, deleteObject, findComment, findNode, fireTransition, getState, getSimulation, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens} from './modules/state.js';
+import {applySimulationState, clearPetriNet, currentMode, deleteObject, findComment, findNode, fireTransition, getSimulation, getState, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens} from './modules/state.js';
 import {exportToFile, exportToSVG, importFromFile, loadFromLocalStorage} from './modules/storage.js';
 import {loadToggleTheme, toggleTheme} from './modules/theme.js';
 
@@ -40,7 +40,7 @@ export function selectObject(id) {
             filteredHistory.forEach(item => {
                 const emoji = colorEmojis[item.color] || '⚫';
                 historyHtml += `
-                    <li style="margin-bottom: 6px; font-family: monospace;">
+                    <li>
                         <span>${emoji}</span> 
                         <b>${item.name}</b>
                     </li>
@@ -50,8 +50,7 @@ export function selectObject(id) {
             historyHtml += `
                     </ol>
                 </div>
-                <p style="font-size: 0.85em; color:#888;">Всего шагов: ${
-                filteredHistory.length}</p>
+                <p style="font-size: 0.85em; color:#888;">Всего шагов: ${filteredHistory.length}</p>
             `;
 
             panel.innerHTML = historyHtml;
@@ -93,10 +92,14 @@ export function selectObject(id) {
         `;
     } else if (comment) {
         panel.innerHTML = `
-            <div class="property-group"><h3>Комментарий</h3></div>
-            <div class="property-group"><label>Текст:</label><input type="text" value="${
-            comment.text}" oninput="updateCommentText('${id}', this.value)"></div>
-        `;
+        <div class="property-group"><h3>Комментарий</h3></div>
+        <div class="property-group">
+            <label>Текст:</label>
+            <textarea rows="4" style="resize: vertical; width: 100%;" 
+                oninput="updateCommentText('${id}', this.value)"
+            >${comment.text}</textarea>
+        </div>
+    `;
     }
 
     const currentObj = place || transition || arc || comment;
@@ -120,6 +123,7 @@ export function selectObject(id) {
 window.selectObject = selectObject;
 window.setMode = setMode;
 window.resetSimulation = resetSimulation;
+window.applySimulationState = applySimulationState;
 window.fireTransition = fireTransition;
 window.toggleFilterColor = toggleFilterColor;
 window.updateElementColor = updateElementColor;
