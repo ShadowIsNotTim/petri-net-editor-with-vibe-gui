@@ -106,6 +106,53 @@ export function importFromFile(event) {
 
 
 export function exportToSVG() {
+    const serialized = serializeSVG();
+    if (!serialized) return;
+    const {svgClone} = serialized;
+
+    const svgString = new XMLSerializer().serializeToString(svgClone);
+    const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = svgUrl;
+    const formattedDate =
+        new Date().toISOString().slice(0, 16).replace('T', '_').replace(/:/g, '-');
+    downloadLink.download = `petri_net_${formattedDate}.svg`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(svgUrl);
+}
+
+export async function exportToPDF() {
+    const serialized = serializeSVG();
+    if (!serialized) return;
+    const {svgClone, width, height} = serialized;
+
+    const printContainer = document.createElement('div');
+    printContainer.id = 'pdf-print-container';
+    const style = document.createElement('style');
+    style.textContent = `
+        @media print {
+            body > * { display: none !important; }
+            #pdf-print-container { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+            svg { width: 100% !important; height: auto !important; max-height: 100vh; }
+        }
+        #pdf-print-container { display: none; }
+    `;
+
+    printContainer.appendChild(svgClone);
+    document.body.appendChild(printContainer);
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(() => {
+        printContainer.remove();
+        style.remove();
+    }, 1000);
+}
+
+export function serializeSVG() {
     const svgElement = document.getElementById('petri-svg');
     if (!svgElement) return;
 
@@ -163,17 +210,5 @@ export function exportToSVG() {
     }
     defs.appendChild(styleElement);
 
-    const svgString = new XMLSerializer().serializeToString(svgClone);
-    const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
-    const svgUrl = URL.createObjectURL(svgBlob);
-
-    const downloadLink = document.createElement('a');
-    downloadLink.href = svgUrl;
-    const formattedDate =
-        new Date().toISOString().slice(0, 16).replace('T', '_').replace(/:/g, '-');
-    downloadLink.download = `petri_net_${formattedDate}.svg`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-    URL.revokeObjectURL(svgUrl);
+    return {svgClone, width, height};
 }

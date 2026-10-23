@@ -2,7 +2,7 @@ import {onCanvasMouseDown, onCanvasMouseMove, onNodeMouseDown, onNodeMouseMove, 
 import {initHotKeys} from './modules/hotkeys.js';
 import {render} from './modules/render.js';
 import {applySimulationState, clearPetriNet, currentMode, deleteObject, findComment, findNode, fireTransition, getSimulation, getState, redoTransition, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, undoTransition, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens} from './modules/state.js';
-import {exportToFile, exportToSVG, importFromFile, loadFromLocalStorage} from './modules/storage.js';
+import {exportToFile, exportToPDF, exportToSVG, importFromFile, loadFromLocalStorage} from './modules/storage.js';
 import {loadToggleTheme, toggleTheme} from './modules/theme.js';
 
 
@@ -152,6 +152,7 @@ window.clearPetriNet = clearPetriNet;
 window.exportToFile = exportToFile;
 window.importFromFile = importFromFile;
 window.exportToSVG = exportToSVG;
+window.exportToPDF = exportToPDF;
 window.toggleTheme = toggleTheme;
 
 window.onCanvasMouseDown = onCanvasMouseDown;
