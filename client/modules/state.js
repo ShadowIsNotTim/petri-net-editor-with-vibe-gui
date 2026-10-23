@@ -4,10 +4,13 @@ let state = {
     transitions: [],  // { uuid, name, x, y }
     arcs: [],         // { uuid, sourceId, targetId, weight }
     comments: [],     // { uuid, text, x, y }
-    counters: {P: 1, T: 1, C: 1},
+    counters: {P: 1, T: 1, C: 1}
+};
+
+let simulation = {
     isSimMode: false,  // Запоминаем статус запущенной симуляции
     history: []        // История совершенных переходов в симуляции
-};
+}
 
 export let currentMode = 'select';  // select, simulation, place, transition, arc, token, comment
 export let selectedId = null;
@@ -40,6 +43,9 @@ export function setCurrentMode(mode) {
 export function getState() {
     return state;
 }
+export function getSimulation() {
+    return simulation;
+}
 export function replaceState(newState) {
     state = newState;
 }
@@ -50,7 +56,7 @@ export function setMode(mode) {
     // Автоматический сброс к начальной разметке при выходе из симуляции
     if (currentMode === 'simulation' && mode !== 'simulation') {
         resetSimulation();
-        state.isSimMode = false;
+        simulation.isSimMode = false;
         selectObject(null);
     }
 
@@ -58,7 +64,7 @@ export function setMode(mode) {
     if (mode === 'simulation') {
         if (currentMode !== 'simulation') {
             state.places.forEach(p => p.initialTokens = p.tokens);
-            state.isSimMode = true;
+            simulation.isSimMode = true;
         }
         selectObject(null);
     }
@@ -70,7 +76,7 @@ export function setMode(mode) {
     if (btn) btn.classList.add('active');
 
     // Поддержка фокуса на симуляции
-    const isSim = currentMode === 'simulation' || state.isSimMode;
+    const isSim = currentMode === 'simulation' || simulation.isSimMode;
     if (isSim && currentMode !== 'simulation') {
         currentMode = 'simulation';
         if (btn) btn.classList.remove('active');
@@ -88,13 +94,9 @@ export function resetSimulation() {
     state.places.forEach(p => {
         if (p.initialTokens !== undefined) p.tokens = p.initialTokens;
     });
-    state.history = [];
+    simulation.history = [];
     render();
     updatePropertyWhileSimulation();
-}
-
-export function generateUUID() {
-    return 'uuid-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
 }
 
 export function findNode(id) {
@@ -154,7 +156,7 @@ export function fireTransition(transId) {
     });
 
     if (transition) {
-        state.history.push({name: transition.name, color: transition.color || 'black'});
+        simulation.history.push({name: transition.name, color: transition.color || 'black'});
     }
 
     render();
@@ -202,7 +204,7 @@ export function updateTokens(id, value) {
     const place = state.places.find(p => p.uuid === id);
     if (place) {
         place.tokens = Math.max(0, parseInt(value) || 0);
-        if (!state.isSimMode) {
+        if (!simulation.isSimMode) {
             place.initialTokens = place.tokens;
         }
         render();
@@ -246,9 +248,7 @@ export function clearPetriNet() {
             transitions: [],
             arcs: [],
             comments: [],
-            counters: {P: 1, T: 1, C: 1},
-            isSimMode: false,
-            history: []
+            counters: {P: 1, T: 1, C: 1}
         };
 
         selectObject(null);

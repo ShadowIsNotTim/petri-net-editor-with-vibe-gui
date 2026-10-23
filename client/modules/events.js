@@ -1,7 +1,7 @@
 import {selectObject} from '../editor.js';
 
 import {render} from './render.js';
-import {arcSourceId, currentMode, deleteObject, dragTarget, findComment, findNode, fireTransition, generateUUID, selectedId, setArcSourceId, setDragTarget, setSelectedId, getState} from './state.js';
+import {arcSourceId, currentMode, deleteObject, dragTarget, findComment, findNode, fireTransition, selectedId, setArcSourceId, setDragTarget, setSelectedId, getState} from './state.js';
 import {importFromFile} from './storage.js';
 
 
@@ -33,17 +33,17 @@ export function onCanvasMouseDown(e) {
 
     if (currentMode === 'place') {
         const name = `P${getState().counters.P++}`;
-        const newPlace = {uuid: generateUUID(), name, x, y, tokens: 0, initialTokens: 0};
+        const newPlace = {uuid: name, name, x, y, tokens: 0, initialTokens: 0};
         getState().places.push(newPlace);
         selectObject(newPlace.uuid);
     } else if (currentMode === 'transition') {
         const name = `T${getState().counters.T++}`;
-        const newTrans = {uuid: generateUUID(), name, x, y};
+        const newTrans = {uuid: name, name, x, y};
         getState().transitions.push(newTrans);
         selectObject(newTrans.uuid);
     } else if (currentMode === 'comment') {
-        const text = `Комментарий ${getState().counters.C++}`;
-        const newComment = {uuid: generateUUID(), text, x, y};
+        const id = `C${getState().counters.C++}`;
+        const newComment = {uuid: id, text: `Комментарий ${count}`, x, y};
         if (!getState().comments) getState().comments = [];
         getState().comments.push(newComment);
         selectObject(newComment.uuid);
@@ -83,6 +83,7 @@ export function onNodeMouseDown(e, id) {
 
         window.addEventListener('pointermove', onNodeMouseMove);
         window.addEventListener('pointerup', onNodeMouseUp);
+
     } else if (currentMode === 'arc') {
         if (findComment(id)) return;
         if (!arcSourceId) {
@@ -104,7 +105,7 @@ export function onNodeMouseDown(e, id) {
                     const transition = getState().transitions?.find(t => t.uuid === transitionId);
                     const transitionColor = transition?.color
                     const newArc = {
-                        uuid: generateUUID(),
+                        uuid: `${arcSourceId}-${id}`,
                         sourceId: arcSourceId,
                         targetId: id,
                         weight: 1,
