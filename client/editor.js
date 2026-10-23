@@ -1,6 +1,6 @@
 import {onCanvasMouseDown, onCanvasMouseMove, onNodeMouseDown, onNodeMouseMove, onNodeMouseUp} from './modules/events.js';
 import {render} from './modules/render.js';
-import {applySimulationState, clearPetriNet, currentMode, deleteObject, findComment, findNode, fireTransition, getSimulation, getState, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens, undoTransition, redoTransition} from './modules/state.js';
+import {applySimulationState, clearPetriNet, currentMode, deleteObject, findComment, findNode, fireTransition, getSimulation, getState, redoTransition, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, undoTransition, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens} from './modules/state.js';
 import {exportToFile, exportToSVG, importFromFile, loadFromLocalStorage} from './modules/storage.js';
 import {loadToggleTheme, toggleTheme} from './modules/theme.js';
 
@@ -71,8 +71,17 @@ export function selectObject(id) {
             <div class="property-group"><h3>Позиция</h3></div>
             <div class="property-group"><label>Имя:</label><input type="text" value="${
             place.name}" oninput="updateName('${id}', this.value)"></div>
-            <div class="property-group"><label>Маркеры (фишки):</label><input  id="property-tokens-input" type="number" min="0" value="${
-            place.tokens}" onchange="updateTokens('${id}', this.value)"></div>
+            
+            <div class="property-group">
+                <div class="property-group"><label>Маркеры (фишки):</label><input  id="property-tokens-input" type="number" min="0" value="${place.tokens}" onchange="updateTokens('${id}', this.value)"></div>
+                <div class="tokens-mobile-row" style="display: flex; gap: 6px; align-items: center; width: 100%;">
+                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = (parseInt(input.value) || 0) - 1; input.value = val; updateTokens('${id}', val);"
+                        style="font-weight: bold; background: #fff3cd; color: #856404;">-1</button>
+                    
+                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = (parseInt(input.value) || 0) + 1; input.value = val; updateTokens('${id}', val);" 
+                        style="font-weight: bold; background: #d4edda; color: #155724;">+1</button>
+                </div>
+            </div>
         `;
     } else if (transition) {
         panel.innerHTML = `
