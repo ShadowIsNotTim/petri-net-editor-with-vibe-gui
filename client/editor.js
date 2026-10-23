@@ -1,4 +1,5 @@
 import {onCanvasMouseDown, onCanvasMouseMove, onNodeMouseDown, onNodeMouseMove, onNodeMouseUp} from './modules/events.js';
+import {initHotKeys} from './modules/hotkeys.js';
 import {render} from './modules/render.js';
 import {applySimulationState, clearPetriNet, currentMode, deleteObject, findComment, findNode, fireTransition, getSimulation, getState, redoTransition, resetSimulation, selectedId, setMode, setSelectedId, toggleFilterColor, undoTransition, updateArcWeight, updateCommentText, updateElementColor, updateName, updateTokens} from './modules/state.js';
 import {exportToFile, exportToSVG, importFromFile, loadFromLocalStorage} from './modules/storage.js';
@@ -73,12 +74,15 @@ export function selectObject(id) {
             place.name}" oninput="updateName('${id}', this.value)"></div>
             
             <div class="property-group">
-                <div class="property-group"><label>Маркеры (фишки):</label><input  id="property-tokens-input" type="number" min="0" value="${place.tokens}" onchange="updateTokens('${id}', this.value)"></div>
+                <div class="property-group"><label>Маркеры (фишки):</label><input  id="property-tokens-input" type="number" min="0" value="${
+            place.tokens}" onchange="updateTokens('${id}', this.value)"></div>
                 <div class="tokens-mobile-row" style="display: flex; gap: 6px; align-items: center; width: 100%;">
-                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = (parseInt(input.value) || 0) - 1; input.value = val; updateTokens('${id}', val);"
+                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = (parseInt(input.value) || 0) - 1; input.value = val; updateTokens('${
+            id}', val);"
                         style="font-weight: bold; background: #fff3cd; color: #856404;">-1</button>
                     
-                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = (parseInt(input.value) || 0) + 1; input.value = val; updateTokens('${id}', val);" 
+                    <button onclick="const input = document.getElementById('property-tokens-input'); const val = (parseInt(input.value) || 0) + 1; input.value = val; updateTokens('${
+            id}', val);" 
                         style="font-weight: bold; background: #d4edda; color: #155724;">+1</button>
                 </div>
             </div>
@@ -156,6 +160,7 @@ window.onNodeMouseDown = onNodeMouseDown;
 function init() {
     loadFromLocalStorage();  // Загружаем сохраненную сеть
     loadToggleTheme();       // Восстанавливаем тему оформления
+    initHotKeys();           // Инициализируем горячие клавиши
     render();                // Делаем первичный рендеринг
 }
 
