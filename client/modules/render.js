@@ -46,7 +46,7 @@ function renderMultilineSVGText(text, x, baseY, maxLength = 12, lineHeightEm = 1
 
     // Вычисляем правильный сдвиг Y вверх (14px — базовая высота строки шрифта)
     const correctedY = baseY - ((lines.length - 1) * 14);
-    return `<text x="${x}" y="${correctedY}" class="label" text-anchor: middle;">${tspans}</text>`;
+    return `<text x="${x}" y="${correctedY}" class="label" text-anchor="middle">${tspans}</text>`;
 }
 
 

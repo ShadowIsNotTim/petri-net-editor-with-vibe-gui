@@ -149,13 +149,13 @@ h3 {
 #canvas-container {
     flex: 1;
     position: relative;
-    overflow: auto;
+    overflow: hidden;
     background: #fafafa;
 }
 
 svg {
-    width: 2000px;
-    height: 2000px;
+    width: 100%;
+    height: 100%;
     background: white;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
     cursor: crosshair;

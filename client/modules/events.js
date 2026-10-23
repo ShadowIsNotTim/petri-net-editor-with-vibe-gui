@@ -7,30 +7,39 @@ import {importFromFile} from './storage.js';
 
 const svg = document.getElementById('petri-svg');
 
+// --- ПЕРЕМЕННЫЕ ДЛЯ ПЕРЕМЕЩЕНИЯ ---
 let startX = 0, startY = 0;
-let startLeft = 0, startTop = 0;
+let isPanning = false;
+
+// --- ПЕРЕМЕННЫЕ ДЛЯ МАСШТАБИРОВАНИЯ ---
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
+let initialPinchDistance = 0; // Mobile pinch-to-Zoom
+let initialScale = 1;
+let isPinching = false;
+
 // --- ОБРАБОТКА КЛИКОВ НА ХОЛСТЕ ---
 export function onCanvasMouseDown(e) {
     if (e.target !== svg) return;
 
     if (currentMode === 'select' || currentMode === 'simulation' ||
         (currentMode === 'arc' || currentMode == 'token')) {
-        startX = e.clientX;
-        startY = e.clientY;
-        const container = document.getElementById('canvas-container');
-        startLeft = container.scrollLeft;
-        startTop = container.scrollTop;
+        isPanning = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
 
         window.addEventListener('pointermove', onCanvasMouseMove);
         window.addEventListener('pointerup', () => {
+            isPanning = false;
             window.removeEventListener('pointermove', onCanvasMouseMove);
         });
         return;
     }
 
     const rect = svg.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left - translateX) / scale;
+    const y = (e.clientY - rect.top - translateY) / scale;
 
     if (currentMode === 'place') {
         const name = `P${getState().counters.P++}`;
@@ -55,11 +64,13 @@ export function onCanvasMouseDown(e) {
 }
 
 export function onCanvasMouseMove(e) {
+    if (!isPanning) return;
     if (e.cancelable) e.preventDefault();
     const container = document.getElementById('canvas-container');
 
-    container.scrollLeft = startLeft - (e.clientX - startX);
-    container.scrollTop = startTop - (e.clientY - startY);
+    translateX = e.clientX - startX;
+    translateY = e.clientY - startY;
+    applyTransform();
 }
 
 export function onNodeMouseDown(e, id) {
@@ -135,8 +146,8 @@ export function onNodeMouseDown(e, id) {
 export function onNodeMouseMove(e) {
     if (!dragTarget || !dragTarget.node) return;
     const rect = svg.getBoundingClientRect();
-    dragTarget.node.x = e.clientX - rect.left;
-    dragTarget.node.y = e.clientY - rect.top;
+    dragTarget.node.x = (e.clientX - rect.left - translateX) / scale;
+    dragTarget.node.y = (e.clientY - rect.top - translateY) / scale;
     render();
 }
 
@@ -159,6 +170,90 @@ export function onNodeMouseUp(e) {
     window.removeEventListener('pointermove', onNodeMouseMove);
     window.removeEventListener('pointerup', onNodeMouseUp);
 }
+
+
+
+// Масштабирование холста
+function applyTransform() {
+    const viewport = document.getElementById('viewport') || svg.firstElementChild;
+    if (viewport) {
+        viewport.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
+    }
+}
+
+svg.addEventListener('wheel', function(e) {
+    // Проверяем, зажат ли Ctrl (или Cmd на Mac). 
+    // На тачпадах ноутбуков жест "щипок" тоже генерирует событие wheel с зажатым ctrlKey!
+    if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+
+        const zoomFactor = 1.1;
+        const oldScale = scale;
+
+        if (e.deltaY < 0) {
+            scale = Math.min(5, scale * zoomFactor); // Макс зум x5
+        } else {
+            scale = Math.max(0.2, scale / zoomFactor); // Мин зум x0.2
+        }
+
+        const rect = svg.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        translateX = mouseX - (mouseX - translateX) * (scale / oldScale);
+        translateY = mouseY - (mouseY - translateY) * (scale / oldScale);
+
+        applyTransform();
+    }
+}, { passive: false });
+
+let touchStartPoints = [];
+svg.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 2) {
+        isPinching = true;
+        e.preventDefault(); 
+
+        initialPinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialScale = scale;
+    }
+}, { passive: false });
+
+svg.addEventListener('touchmove', function(e) {
+    if (isPinching && e.touches.length === 2) {
+        e.preventDefault();
+
+        const currentDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+
+        if (initialPinchDistance > 0) {
+            const oldScale = scale;
+            const pinchFactor = currentDistance / initialPinchDistance;
+            scale = Math.max(0.2, Math.min(5, initialScale * pinchFactor));
+
+            const rect = svg.getBoundingClientRect();
+            const touchCenterX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+            const touchCenterY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+            translateX = touchCenterX - (touchCenterX - translateX) * (scale / oldScale);
+            translateY = touchCenterY - (touchCenterY - translateY) * (scale / oldScale);
+
+            applyTransform();
+        }
+    }
+}, { passive: false });
+
+svg.addEventListener('touchend', function(e) {
+    if (e.touches.length < 2) {
+        isPinching = false;
+        initialPinchDistance = 0;
+    }
+});
+
 
 
 // --- ИМПОРТ DRAG-and-DROP ---

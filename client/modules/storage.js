@@ -104,34 +104,44 @@ export function importFromFile(event) {
 }
 
 
+
 export function exportToSVG() {
     const svgElement = document.getElementById('petri-svg');
     if (!svgElement) return;
 
-    // 1. Получаем точные границы всего нарисованного контента (сетей Петри)
-    // Метод игнорирует пустое пространство вокруг графа
-    const bbox = svgElement.getBBox();
-
     const svgClone = svgElement.cloneNode(true);
     svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
-    // 2. Добавляем небольшой отступ (padding) вокруг сети, чтобы элементы у краев не обрезались
+    // Сразу вычищаем пустые комментарии в клоне, чтобы они не ломали расчет границ
+    const emptyComments = svgClone.querySelectorAll('.is-empty');
+    emptyComments.forEach(comment => comment.remove());
+
+    // Это возвращает элементы к их истинным локальным координатам
+    const clonedViewport = svgClone.getElementById('viewport') || svgClone.firstElementChild;
+    if (clonedViewport) {
+        clonedViewport.removeAttribute('transform');
+    }
+
+    svgClone.style.position = 'absolute';
+    svgClone.style.top = '-9999px';
+    svgClone.style.left = '-9999px';
+    svgClone.style.visibility = 'hidden';
+    document.body.appendChild(svgClone);
+
+    const bbox = svgClone.getBBox();
+    document.body.removeChild(svgClone);
+    svgClone.removeAttribute('style');
+
     const padding = 20;
     const minX = bbox.x - padding;
     const minY = bbox.y - padding;
     const width = bbox.width + padding * 2;
     const height = bbox.height + padding * 2;
 
-    // 3. Задаем viewBox. Именно он заставляет SVG растягиваться и сжиматься
+    // Браузер сам отмасштабирует отрицательные области в плюс
     svgClone.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
-
-    // Задаем физические размеры для корректного отображения в базовых просмотрщиках
     svgClone.setAttribute('width', width);
     svgClone.setAttribute('height', height);
-
-    // Сразу вычищаем пустые комментарии (из прошлого шага), чтобы они не влияли на viewBox
-    const emptyComments = svgClone.querySelectorAll('.is-empty');
-    emptyComments.forEach(comment => comment.remove());
 
     let styles = '';
     for (const stylesheet of document.styleSheets) {
@@ -159,7 +169,6 @@ export function exportToSVG() {
 
     const downloadLink = document.createElement('a');
     downloadLink.href = svgUrl;
-    downloadLink.download = 'petri-net.svg';
     const formattedDate =
         new Date().toISOString().slice(0, 16).replace('T', '_').replace(/:/g, '-');
     downloadLink.download = `petri_net_${formattedDate}.svg`;
