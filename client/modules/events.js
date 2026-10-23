@@ -15,6 +15,10 @@ let isPanning = false;
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
+let touchCenterX = 0;
+let touchCenterY = 0;
+let initialTranslateX = 0;
+let initialTranslateY = 0;
 let initialPinchDistance = 0; // Mobile pinch-to-Zoom
 let initialScale = 1;
 let isPinching = false;
@@ -218,6 +222,14 @@ svg.addEventListener('touchstart', function(e) {
             e.touches[0].clientY - e.touches[1].clientY
         );
         initialScale = scale;
+
+        // Фиксируем координаты центра между пальцами строго В МОМЕНТ КАСАНИЯ
+        const rect = svg.getBoundingClientRect();
+        touchCenterX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+        touchCenterY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+        initialTranslateX = translateX;
+        initialTranslateY = translateY;
     }
 }, { passive: false });
 
@@ -231,17 +243,11 @@ svg.addEventListener('touchmove', function(e) {
         );
 
         if (initialPinchDistance > 0) {
-            const oldScale = scale;
             const pinchFactor = currentDistance / initialPinchDistance;
             scale = Math.max(0.2, Math.min(5, initialScale * pinchFactor));
 
-            const rect = svg.getBoundingClientRect();
-            const touchCenterX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
-            const touchCenterY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
-
-            translateX = touchCenterX - (touchCenterX - translateX) * (scale / oldScale);
-            translateY = touchCenterY - (touchCenterY - translateY) * (scale / oldScale);
-
+            translateX = touchCenterX - (touchCenterX - initialTranslateX) * (scale / initialScale);
+            translateY = touchCenterY - (touchCenterY - initialTranslateY) * (scale / initialScale);
             applyTransform();
         }
     }
