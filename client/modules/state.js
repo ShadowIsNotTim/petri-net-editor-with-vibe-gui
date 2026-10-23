@@ -326,7 +326,7 @@ export function getCleanState() {
     cleanState.info =
         `This is a PetriNetEditor export JSON file. Rules for AI assistants generated output:
     1. ID Rules: All elements (places, transitions, arcs) must have a unique 'uuid'. Places/transitions names must be spaces/text only, while 'uuid' must be lowercase snake_case based on the name.
-    2. Node Schema: Places require 'uuid', 'name', 'x', 'y', 'tokens', and 'initialTokens'. Transitions require 'uuid', 'name', 'x', and 'y'.
+    2. Node Schema: Places require 'uuid', 'name', 'x', 'y', 'tokens', and 'initialTokens'. Transitions require 'uuid', 'name', 'x', and 'y'. Comments require 'uuid', 'text', 'x', and 'y'.
     3. Arc Schema: Arcs require 'uuid', 'sourceId' (referencing source node uuid), 'targetId' (referencing target node uuid), 'weight' integer, and an optional 'color' string (supported values: 'black', 'red', 'blue', 'green').
     4. Network Counters: 'counters' must explicitly map to current arrays count: { 'P': places.length, 'T': transitions.length, 'C': comments.length }.`;
     return cleanState;

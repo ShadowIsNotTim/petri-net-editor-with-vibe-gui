@@ -148,7 +148,6 @@ export function render() {
         <rect x="${t.x - 10}" y="${t.y - 25}" width="20" height="50" class="transition ${
             isSelected ? 'selected' : ''} ${enabledClass} ${isArcSource ? 'source-selected' : ''}" 
             style="stroke: ${tColor}; ${currentMode !== 'simulation' ? 'fill: white;' : ''}"/>
-        <!-- Добавляем инлайн-стиль цвета к сгенерированному тексту -->
         <g style="fill: ${tColor};">${textMarkup}</g>
     </g>
 `;

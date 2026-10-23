@@ -158,7 +158,7 @@ export function initHotKeys() {
             't': 'transition',
             'a': 'arc',
             'o': 'token',
-            'c': 'comment'
+            'u': 'comment'
         };
 
         if (modesMapping[e.key]) {
